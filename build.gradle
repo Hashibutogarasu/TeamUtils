@@ -8,46 +8,11 @@ plugins {
 group = 'com.karasu256'
 
 def versionFile = file('version.properties')
-def versionProps = new Properties()
-
-def initializeWithGitVersion() {
-    def gitVersion = fetchLatestGitVersion()
-    versionProps.setProperty('major', gitVersion[0].toString())
-    versionProps.setProperty('minor', gitVersion[1].toString())
-    versionProps.setProperty('patch', gitVersion[2].toString())
-    println "Initialized version from Git: ${gitVersion[0]}.${gitVersion[1]}.${gitVersion[2]}"
-    return gitVersion
-}
-
-if (versionFile.exists()) {
-    versionFile.withInputStream { versionProps.load(it) }
-} else {
-    def gitVersion = initializeWithGitVersion()
-    versionFile.createNewFile()
-    versionFile.withOutputStream { versionProps.store(it, "Version properties for ${project.name}") }
-}
-
-def buildNumberFile = file('build-number.properties')
-def buildProps = new Properties()
-
-if (buildNumberFile.exists()) {
-    buildNumberFile.withInputStream { buildProps.load(it) }
-} else {
-    buildProps.setProperty('buildNumber', '0')
-    buildNumberFile.createNewFile()
-    buildNumberFile.withOutputStream { buildProps.store(it, null) }
-}
-
-def majorVersion = versionProps.getProperty('major').toInteger()
-def minorVersion = versionProps.getProperty('minor').toInteger()
-def patchVersion = versionProps.getProperty('patch').toInteger()
-def buildNumber = buildProps.getProperty('buildNumber').toInteger()
-
-// バージョン形式
-version = "${majorVersion}.${minorVersion}.${patchVersion}.${buildNumber}"
+// versionPropsをプロジェクト拡張プロパティとして定義
+project.ext.versionProps = new Properties()
 
 def fetchLatestGitVersion() {
-    def latestVersion = [0, 0, 1] // デフォルトバージョン：0.0.1
+    def latestVersion = [0, 0, 1]
     try {
         def process = "git ls-remote --tags https://github.com/Hashibutogarasu/TeamUtils.git".execute()
         def tags = process.text.readLines()
@@ -59,11 +24,11 @@ def fetchLatestGitVersion() {
             latestVersion = latest.tokenize('.').collect { it.toInteger() }
             println "Found latest version tag: v${latest}"
             
-            // 現在のバージョンと新しいバージョンを比較
+            // プロジェクト拡張プロパティを使用
             def currentVersion = [
-                versionProps.getProperty('major', '0').toInteger(),
-                versionProps.getProperty('minor', '0').toInteger(),
-                versionProps.getProperty('patch', '0').toInteger()
+                project.versionProps.getProperty('major', '0').toInteger(),
+                project.versionProps.getProperty('minor', '0').toInteger(),
+                project.versionProps.getProperty('patch', '0').toInteger()
             ]
             
             if (latestVersion != currentVersion) {
@@ -81,6 +46,44 @@ def fetchLatestGitVersion() {
     }
     return latestVersion
 }
+
+def initializeWithGitVersion() {
+    def gitVersion = fetchLatestGitVersion()
+    // プロジェクト拡張プロパティを使用
+    project.versionProps.setProperty('major', gitVersion[0].toString())
+    project.versionProps.setProperty('minor', gitVersion[1].toString())
+    project.versionProps.setProperty('patch', gitVersion[2].toString())
+    println "Initialized version from Git: ${gitVersion[0]}.${gitVersion[1]}.${gitVersion[2]}"
+    return gitVersion
+}
+
+// ビルドナンバーの関連変数を先に定義
+def buildNumberFile = file('build-number.properties')
+def buildProps = new Properties()
+
+if (versionFile.exists()) {
+    versionFile.withInputStream { project.versionProps.load(it) }
+} else {
+    def gitVersion = initializeWithGitVersion()
+    versionFile.createNewFile()
+    versionFile.withOutputStream { project.versionProps.store(it, "Version properties for ${project.name}") }
+}
+
+if (buildNumberFile.exists()) {
+    buildNumberFile.withInputStream { buildProps.load(it) }
+} else {
+    buildProps.setProperty('buildNumber', '0')
+    buildNumberFile.createNewFile()
+    buildNumberFile.withOutputStream { buildProps.store(it, null) }
+}
+
+def majorVersion = project.versionProps.getProperty('major').toInteger()
+def minorVersion = project.versionProps.getProperty('minor').toInteger()
+def patchVersion = project.versionProps.getProperty('patch').toInteger()
+def buildNumber = buildProps.getProperty('buildNumber').toInteger()
+
+// バージョン形式
+version = "${majorVersion}.${minorVersion}.${patchVersion}.${buildNumber}"
 
 configurations {
     pluginImplementation
