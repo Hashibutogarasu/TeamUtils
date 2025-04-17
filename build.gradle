@@ -1,0 +1,118 @@
+plugins {
+    id 'java'
+    id 'maven-publish'
+    id("xyz.jpenilla.run-paper") version "2.3.1"
+}
+
+group = 'com.karasu256'
+version = '0.1'
+
+repositories {
+    mavenCentral()
+    mavenLocal()
+    maven {
+        name = "papermc-repo"
+        url = "https://repo.papermc.io/repository/maven-public/"
+    }
+    maven {
+        name = "GitHubPackages"
+        url = "https://maven.pkg.github.com/Hashibutogarasu/KCommandAPI"
+        credentials {
+            username = findProperty('gpr.user') ?: System.getenv("GITHUB_USERNAME")
+            password = findProperty('gpr.key') ?: System.getenv("GITHUB_TOKEN")
+        }
+    }
+    maven {
+        name = "GitHubPackages"
+        url = "https://maven.pkg.github.com/Hashibutogarasu/KarasuConfigLib"
+        credentials {
+            username = findProperty('gpr.user') ?: System.getenv("GITHUB_USERNAME")
+            password = findProperty('gpr.key') ?: System.getenv("GITHUB_TOKEN")
+        }
+    }
+}
+
+configurations {
+    pluginImplementation
+}
+
+dependencies {
+    compileOnly("io.papermc.paper:paper-api:1.21.3-R0.1-SNAPSHOT")
+    implementation 'org.yaml:snakeyaml:2.0'
+    implementation 'com.google.code.gson:gson:2.10.1'
+    implementation 'com.karasu256:kcommandapi:0.0.1.60'
+    pluginImplementation 'com.karasu256:kcommandapi:0.0.1.60'
+    implementation 'com.karasu256:karasuconfiglib:0.1.0.6'
+    pluginImplementation 'com.karasu256:karasuconfiglib:0.1.0.6'
+}
+
+def targetJavaVersion = 21
+java {
+    def javaVersion = JavaVersion.toVersion(targetJavaVersion)
+    sourceCompatibility = javaVersion
+    targetCompatibility = javaVersion
+    if (JavaVersion.current() < javaVersion) {
+        toolchain.languageVersion = JavaLanguageVersion.of(targetJavaVersion)
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+
+    if (targetJavaVersion >= 10 || JavaVersion.current().isJava10Compatible()) {
+        options.release.set(targetJavaVersion)
+    }
+}
+
+processResources {
+    def props = [version: version]
+    inputs.properties props
+    filteringCharset 'UTF-8'
+    filesMatching('plugin.yml') {
+        expand props
+    }
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            groupId = project.group
+            artifactId = project.name
+            version = project.version
+            from components.java
+        }
+    }
+}
+
+tasks {
+    runServer {
+        // Configure the Minecraft version for our task.
+        // This is the only required configuration besides applying the plugin.
+        // Your plugin's jar (or shadowJar if present) will be used automatically.
+        minecraftVersion("1.21.3")
+        dependsOn('copyDependPlugin')
+    }
+}
+
+tasks.register('createPluginsDir') {
+    doLast {
+        mkdir 'run/plugins'
+    }
+}
+
+tasks.register('copyDependPlugin', Copy) {
+    doFirst {
+        fileTree('run/plugins').matching {
+            configurations.pluginImplementation.dependencies.each { dependency ->
+                include "**/${dependency.name}-*.jar"
+            }
+        }.each { file ->
+            logger.lifecycle("Removing existing plugin: ${file.name}")
+            file.delete()
+        }
+    }
+
+    dependsOn createPluginsDir
+    from(configurations.pluginImplementation)
+    into('run/plugins')
+}

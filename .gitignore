@@ -1,0 +1,13 @@
+.idea/
+
+bin/
+
+build/
+
+run/
+
+.gradle/
+
+gradle.properties
+
+resourcepack/

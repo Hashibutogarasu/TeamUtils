@@ -1,0 +1,105 @@
+name: Publish to GitHub Packages
+
+on:
+  workflow_dispatch: # 手動実行のみ許可
+    inputs:
+      auto_generate_about:
+        description: 'About this packageを自動生成する'
+        type: boolean
+        default: true
+        required: true
+      about_text:
+        description: 'About this package（自動生成が無効の場合のみ使用）'
+        type: string
+        required: false
+
+jobs:
+  check-permissions:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check if user is repo owner
+        run: |
+          if [[ "${{ github.actor }}" != "${{ github.repository_owner }}" ]]; then
+            echo "::error::このワークフローはリポジトリ所有者のみ実行できます"
+            exit 1
+          fi
+  publish:
+    needs: check-permissions
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # すべての履歴を取得するために必要
+
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: "17"
+          distribution: "temurin"
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@af1da67850ed9a4cedd57bfd976089dd991e2582
+
+      - name: Get commit messages since last release
+        if: ${{ inputs.auto_generate_about == true }}
+        id: get_commits
+        run: |
+          # 最新のタグ（リリース）を取得
+          LATEST_TAG=$(git describe --tags --abbrev=0 --always 2>/dev/null || echo "初回リリース")
+          
+          # 初回リリースの場合とそれ以外で処理を分ける
+          if [[ "$LATEST_TAG" == "初回リリース" ]]; then
+            COMMIT_MESSAGES=$(git log --pretty=format:"- %s" --no-merges | grep -v "\[ci skip\]$")
+            echo "初回リリースのため、全てのコミットを表示します"
+          else
+            COMMIT_MESSAGES=$(git log ${LATEST_TAG}..HEAD --pretty=format:"- %s" --no-merges | grep -v "\[ci skip\]$")
+          fi
+          
+          if [ -z "$COMMIT_MESSAGES" ]; then
+            COMMIT_MESSAGES="- 変更なし（初回リリースまたは変更がありません）"
+          fi
+
+          # 環境変数の設定方法を修正
+          {
+            DESCRIPTION="最新リリースからの変更点:"$'\n'"$COMMIT_MESSAGES"
+            echo "PACKAGE_DESCRIPTION<<EOF" >> $GITHUB_ENV
+            echo "$DESCRIPTION" >> $GITHUB_ENV
+            echo "EOF" >> $GITHUB_ENV
+            
+            # デバッグ用にコンソールにも出力
+            echo "生成された説明文:"
+            echo "$DESCRIPTION"
+            
+            # build.gradleに渡すためのプロパティファイルを作成
+            echo "packageDescription=$(echo "$DESCRIPTION" | base64 -w 0)" > package_description.properties
+          }
+
+      - name: Build and Publish with Gradle
+        run: ./gradlew build publish -PskipSigning=true -PallowPublishSnapshot=true -PpackageProps=package_description.properties
+        env:
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MAVEN_OPTS: "--overwrite"
+          PACKAGE_ABOUT: ${{ inputs.auto_generate_about == true && env.PACKAGE_DESCRIPTION || inputs.about_text }}
+
+      - name: Upload Plugin JAR
+        uses: actions/upload-artifact@v4
+        with:
+          name: One-Shot-Glory-Plugin-Published
+          path: build/libs/One-Shot-Glory-*.jar
+          if-no-files-found: error
+          retention-days: 90 # 90日間アーティファクトを保存
+
+      - name: Write Job Summary
+        if: success()
+        run: |
+          echo "## 📦 パッケージが正常に公開されました" >> $GITHUB_STEP_SUMMARY
+          echo "### 📝 CHANGELOG" >> $GITHUB_STEP_SUMMARY
+          echo '' >> $GITHUB_STEP_SUMMARY
+          echo "${{ inputs.auto_generate_about == true && env.PACKAGE_DESCRIPTION || inputs.about_text }}" >> $GITHUB_STEP_SUMMARY
