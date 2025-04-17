@@ -8,9 +8,7 @@
 name: Gradle Package
 
 on:
-  release:
-    types: [created]
-  workflow_dispatch: # 手動実行を可能にする
+  workflow_dispatch:
 
 jobs:
   build:
@@ -29,11 +27,11 @@ jobs:
           server-id: github # Value of the distributionManagement/repository/id field of the pom.xml
           settings-path: ${{ github.workspace }} # location for the settings.xml file
 
-      - name: gradlewに実行権限を付与
-        run: chmod +x ./gradlew
-
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@af1da67850ed9a4cedd57bfd976089dd991e2582 # v4.0.0
+
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
 
       - name: Build with Gradle
         run: ./gradlew build
