@@ -11,7 +11,7 @@ import com.karasu256.teamUtils.utils.LocationUtils;
 public class TestSubCommand extends AbstractSubCommand {
     public TestSubCommand(ICommand parent) {
         super("test", parent);
-        addSubCommand(new TestPlayerLocationRefleshSubCommand(this));
+        addSubCommand(new TestPlayerLocationRefreshSubCommand(this));
     }
 
     @Override
@@ -19,9 +19,9 @@ public class TestSubCommand extends AbstractSubCommand {
         return false;
     }
 
-    private class TestPlayerLocationRefleshSubCommand extends AbstractEndOfSubCommand {
-        public TestPlayerLocationRefleshSubCommand(ICommand parent) {
-            super("locationreflesh", parent);
+    private class TestPlayerLocationRefreshSubCommand extends AbstractEndOfSubCommand {
+        public TestPlayerLocationRefreshSubCommand(ICommand parent) {
+            super("locationrefresh", parent);
         }
 
         @Override

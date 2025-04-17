@@ -14,23 +14,23 @@
 
 # コマンド一覧
 
-| コマンド                                | 説明                  |
-|-------------------------------------|---------------------|
-| `/kteam clear`                      | チームをリフレッシュします       |
-| `/kteam reflesh <team member size>` | チームをリフレッシュします       |
-| `/kteam viewers add <player>`       | 観戦チームにプレイヤーを追加します   |
-| `/kteam viewers remove <player>`    | 観戦チームからプレイヤーを削除します  |
-| `/kteam viewers list`               | 観戦チームのプレイヤーを表示します   |
-| `/kteam players add <player>`       | 参加チームにプレイヤーを追加します   |
-| `/kteam players remove <player>`    | 参加チームからプレイヤーを削除します  |
-| `/kteam players list`               | 参加チームのプレイヤーを表示します   |
-| `/kteam rules <rule> <value>`       | ルールを設定します           |
-| `/kteam rules list`                 | ルールを表示します           |
-| `/kteam help`                       | ヘルプを表示します           |
-| `/kteam version`                    | プラグインのバージョンを表示します   |
-| `/kteam reload`                     | プラグインをリロードします       |
-| `/kteam reload config`              | プラグインの設定をリロードします    |
-| `/kteam reload messages`            | プラグインのメッセージをリロードします |
-| `/kteam reload teams`               | プラグインのチームをリロードします   |
-| `/kteam reload rules`               | プラグインのルールをリロードします   |
-| `/kteam help <page>`                | ヘルプを表示します           |
+| コマンド                               | 説明                                    |
+|------------------------------------|---------------------------------------|
+| `/kteam clear`                     | すべてのチームをクリアしてリフレッシュします              |
+| `/kteam refresh <team member size>` | 指定したサイズでチームを再編成します                  |
+| `/kteam viewers add <player>`      | プレイヤーを観戦チームに追加します                   |
+| `/kteam viewers remove <player>`   | 観戦チームから指定したプレイヤーを削除します              |
+| `/kteam viewers list`              | 現在の観戦チームに所属するプレイヤー一覧を表示します          |
+| `/kteam players add <player>`      | プレイヤーを参加チームに追加します                   |
+| `/kteam players remove <player>`   | 参加チームから指定したプレイヤーを削除します              |
+| `/kteam players list`              | 現在の参加チームに所属するプレイヤー一覧を表示します          |
+| `/kteam rules <rule> <value>`      | 指定したルールの値を設定します                     |
+| `/kteam rules list`                | 現在設定されているルール一覧を表示します               |
+| `/kteam help`                      | コマンドのヘルプを表示します                      |
+| `/kteam version`                   | プラグインのバージョン情報を表示します                 |
+| `/kteam reload`                    | プラグイン全体を再読み込みします                    |
+| `/kteam reload config`             | プラグインの設定ファイルのみを再読み込みします            |
+| `/kteam reload messages`           | プラグインのメッセージファイルのみを再読み込みします         |
+| `/kteam reload teams`              | チーム構成のみを再読み込みします                    |
+| `/kteam reload rules`              | ゲームルール設定のみを再読み込みします                 |
+| `/kteam help <page>`               | ヘルプの特定ページを表示します                     |

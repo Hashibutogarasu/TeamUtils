@@ -8,14 +8,14 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.jetbrains.annotations.NotNull;
 
-public class RefleshSubCommand extends AbstractEndOfSubCommand {
-    public RefleshSubCommand(ICommand parent) {
+public class RefreshSubCommand extends AbstractEndOfSubCommand {
+    public RefreshSubCommand(ICommand parent) {
         super("reflesh", parent);
     }
 
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
-        LOGGER.info("Refleshing teams...");
+        LOGGER.info("Refreshing teams...");
         int maxMember = 0;
         int teamLeaders = 0;
 
