@@ -1,11 +1,90 @@
 plugins {
     id 'java'
     id 'maven-publish'
+    id 'signing'
     id("xyz.jpenilla.run-paper") version "2.3.1"
 }
 
 group = 'com.karasu256'
-version = '0.1'
+
+def versionFile = file('version.properties')
+def versionProps = new Properties()
+
+def initializeWithGitVersion() {
+    def gitVersion = fetchLatestGitVersion()
+    versionProps.setProperty('major', gitVersion[0].toString())
+    versionProps.setProperty('minor', gitVersion[1].toString())
+    versionProps.setProperty('patch', gitVersion[2].toString())
+    println "Initialized version from Git: ${gitVersion[0]}.${gitVersion[1]}.${gitVersion[2]}"
+    return gitVersion
+}
+
+if (versionFile.exists()) {
+    versionFile.withInputStream { versionProps.load(it) }
+} else {
+    def gitVersion = initializeWithGitVersion()
+    versionFile.createNewFile()
+    versionFile.withOutputStream { versionProps.store(it, "Version properties for ${project.name}") }
+}
+
+def buildNumberFile = file('build-number.properties')
+def buildProps = new Properties()
+
+if (buildNumberFile.exists()) {
+    buildNumberFile.withInputStream { buildProps.load(it) }
+} else {
+    buildProps.setProperty('buildNumber', '0')
+    buildNumberFile.createNewFile()
+    buildNumberFile.withOutputStream { buildProps.store(it, null) }
+}
+
+def majorVersion = versionProps.getProperty('major').toInteger()
+def minorVersion = versionProps.getProperty('minor').toInteger()
+def patchVersion = versionProps.getProperty('patch').toInteger()
+def buildNumber = buildProps.getProperty('buildNumber').toInteger()
+
+// バージョン形式
+version = "${majorVersion}.${minorVersion}.${patchVersion}.${buildNumber}"
+
+def fetchLatestGitVersion() {
+    def latestVersion = [0, 0, 1] // デフォルトバージョン：0.0.1
+    try {
+        def process = "git ls-remote --tags https://github.com/Hashibutogarasu/TeamUtils.git".execute()
+        def tags = process.text.readLines()
+            .collect { it.split()[1].replaceAll("refs/tags/v", "") }
+            .findAll { it =~ /^\d+\.\d+\.\d+$/ }
+        
+        if (tags) {
+            def latest = tags.last()
+            latestVersion = latest.tokenize('.').collect { it.toInteger() }
+            println "Found latest version tag: v${latest}"
+            
+            // 現在のバージョンと新しいバージョンを比較
+            def currentVersion = [
+                versionProps.getProperty('major', '0').toInteger(),
+                versionProps.getProperty('minor', '0').toInteger(),
+                versionProps.getProperty('patch', '0').toInteger()
+            ]
+            
+            if (latestVersion != currentVersion) {
+                println "Version changed from ${currentVersion.join('.')} to ${latestVersion.join('.')}"
+                // ビルドナンバーをリセット
+                buildProps.setProperty('buildNumber', '0')
+                buildProps.store(buildNumberFile.newWriter(), null)
+            }
+        } else {
+            println "No version tags found. Using default version: ${latestVersion.join('.')}"
+        }
+    } catch (Exception e) {
+        println "Warning: Failed to fetch version from Git: ${e.message}"
+        println "Using default version: ${latestVersion.join('.')}"
+    }
+    return latestVersion
+}
+
+configurations {
+    pluginImplementation
+}
 
 repositories {
     mavenCentral()
@@ -30,10 +109,10 @@ repositories {
             password = findProperty('gpr.key') ?: System.getenv("GITHUB_TOKEN")
         }
     }
-}
-
-configurations {
-    pluginImplementation
+    maven {
+        name = "sonatype"
+        url = "https://oss.sonatype.org/content/groups/public/"
+    }
 }
 
 dependencies {
@@ -54,6 +133,8 @@ java {
     if (JavaVersion.current() < javaVersion) {
         toolchain.languageVersion = JavaLanguageVersion.of(targetJavaVersion)
     }
+    withJavadocJar()
+    withSourcesJar()
 }
 
 tasks.withType(JavaCompile).configureEach {
@@ -76,12 +157,81 @@ processResources {
 publishing {
     publications {
         mavenJava(MavenPublication) {
-            groupId = project.group
-            artifactId = project.name
-            version = project.version
             from components.java
+            artifactId = 'teamutils'
+            
+            version = project.version.toString()
+            
+            pom {
+                name = 'TeamUtils'
+                description = 'A Minecraft plugin that provides team management utilities'
+                url = 'https://github.com/Hashibutogarasu/TeamUtils'
+                
+                licenses {
+                    license {
+                        name = 'MIT License'
+                        url = 'https://opensource.org/licenses/MIT'
+                    }
+                }
+                
+                developers {
+                    developer {
+                        id = 'hashibutogarasu'
+                        name = 'Hashibutogarasu'
+                        email = 'karasu@karasu256.com'
+                        url = 'https://github.com/Hashibutogarasu'
+                    }
+                }
+                
+                scm {
+                    connection = 'scm:git:git://github.com/Hashibutogarasu/TeamUtils.git'
+                    developerConnection = 'scm:git:ssh://github.com/Hashibutogarasu/TeamUtils.git'
+                    url = 'https://github.com/Hashibutogarasu/TeamUtils'
+                }
+            }
         }
     }
+    repositories {
+        maven {
+            name = "Local"
+            url = layout.buildDirectory.dir('repos/bundles')
+        }
+        
+        maven {
+            name = "GitHubPackages"
+            url = uri("https://maven.pkg.github.com/Hashibutogarasu/TeamUtils")
+            credentials {
+                username = project.findProperty("gpr.user") ?: System.getenv("GITHUB_ACTOR")
+                password = project.findProperty("gpr.key") ?: System.getenv("GITHUB_TOKEN")
+            }
+        }
+    }
+}
+
+signing {
+    def signingKey = findProperty("signing.key")
+    def signingPassword = findProperty("signing.password")
+    
+    if (signingKey && signingPassword) {
+        useInMemoryPgpKeys(signingKey, signingPassword)
+    } else {
+        def signingKeyId = findProperty("signing.keyId")
+        def signingSecretKeyRingFile = findProperty("signing.secretKeyRingFile")
+        
+        if (signingKeyId && signingPassword && signingSecretKeyRingFile) {
+            def keyFile = new File(signingSecretKeyRingFile.toString().replaceAll('"', ''))
+            useInMemoryPgpKeys(signingKeyId, keyFile.text, signingPassword)
+        } else {
+            println "署名情報が不完全です - 署名はスキップされます"
+        }
+    }
+    
+    required { gradle.taskGraph.hasTask("publish") }
+    sign publishing.publications.mavenJava
+}
+
+tasks.withType(PublishToMavenRepository) {
+    mustRunAfter tasks.withType(Sign)
 }
 
 tasks {
@@ -91,6 +241,35 @@ tasks {
         // Your plugin's jar (or shadowJar if present) will be used automatically.
         minecraftVersion("1.21.3")
         dependsOn('copyDependPlugin')
+    }
+}
+
+tasks.register('incrementBuildNumber') {
+    group = 'build'
+    description = 'Increment build number after successful build'
+    
+    doLast {
+        def currentBuildNumber = buildProps.getProperty('buildNumber').toInteger()
+        buildProps.setProperty('buildNumber', (currentBuildNumber + 1).toString())
+        buildNumberFile.withOutputStream { buildProps.store(it, null) }
+        println "Build number incremented to: ${currentBuildNumber + 1}"
+    }
+}
+
+tasks.register('updatePluginVersion') {
+    group = 'build'
+    description = 'Update plugin.yml version from project version'
+    
+    doLast {
+        def pluginYml = file('src/main/resources/plugin.yml')
+        def lines = pluginYml.readLines()
+        def updatedLines = lines.collect { line ->
+            if (line.trim().startsWith('version:')) {
+                return "version: '${project.version}'"
+            }
+            return line
+        }
+        pluginYml.text = updatedLines.join('\n')
     }
 }
 
@@ -115,4 +294,29 @@ tasks.register('copyDependPlugin', Copy) {
     dependsOn createPluginsDir
     from(configurations.pluginImplementation)
     into('run/plugins')
+}
+
+tasks.register('syncVersionWithGit') {
+    group = 'build'
+    description = 'Synchronize version with GitHub release tags'
+    
+    doLast {
+        def gitVersion = fetchLatestGitVersion()
+        versionProps.setProperty('major', gitVersion[0].toString())
+        versionProps.setProperty('minor', gitVersion[1].toString())
+        versionProps.setProperty('patch', gitVersion[2].toString())
+        versionFile.withOutputStream { versionProps.store(it, "Version properties for ${project.name}") }
+        
+        project.version = "${gitVersion[0]}.${gitVersion[1]}.${gitVersion[2]}.${buildNumber}"
+        println "Version synchronized with Git: ${project.version}"
+    }
+}
+
+tasks.named('processResources') {
+    dependsOn 'updatePluginVersion'
+}
+
+tasks.named('build') {
+    dependsOn 'sourcesJar', 'javadocJar', 'syncVersionWithGit'
+    finalizedBy 'incrementBuildNumber'
 }
