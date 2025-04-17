@@ -100,7 +100,7 @@ repositories {
         name = "GitHubPackages"
         url = "https://maven.pkg.github.com/Hashibutogarasu/KCommandAPI"
         credentials {
-            username = findProperty('gpr.user') ?: System.getenv("GITHUB_USERNAME")
+            username = findProperty('gpr.user') ?: System.getenv("GITHUB_ACTOR")
             password = findProperty('gpr.key') ?: System.getenv("GITHUB_TOKEN")
         }
     }
@@ -108,7 +108,7 @@ repositories {
         name = "GitHubPackages"
         url = "https://maven.pkg.github.com/Hashibutogarasu/KarasuConfigLib"
         credentials {
-            username = findProperty('gpr.user') ?: System.getenv("GITHUB_USERNAME")
+            username = findProperty('gpr.user') ?: System.getenv("GITHUB_ACTOR")
             password = findProperty('gpr.key') ?: System.getenv("GITHUB_TOKEN")
         }
     }
