@@ -690,6 +690,17 @@ public class TeamUtility {
         return getObjective(LEADER_OBJECTIVE).getScore(player.getName()).getScore() == 1;
     }
 
+    public static boolean isSameTeam(Player player1, Player player2) {
+        if (player1 == null || player2 == null) {
+            return false;
+        }
+
+        Team team1 = TeamUtility.getTeamByName(player1.getName());
+        Team team2 = TeamUtility.getTeamByName(player2.getName());
+
+        return team1 != null && team1.equals(team2);
+    }
+
     public static String getTeamInfo(String teamName) {
         Team team = getScoreboard().getTeam(teamName);
         if (team == null)
