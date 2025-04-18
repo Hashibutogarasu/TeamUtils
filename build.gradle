@@ -124,8 +124,8 @@ dependencies {
     implementation 'com.google.code.gson:gson:2.10.1'
     implementation 'com.karasu256:kcommandapi:0.0.1.60'
     pluginImplementation 'com.karasu256:kcommandapi:0.0.1.60'
-    implementation 'com.karasu256:karasuconfiglib:0.1.0.7'
-    pluginImplementation 'com.karasu256:karasuconfiglib:0.1.0.7'
+    implementation 'com.karasu256:karasuconfiglib:0.1.0.8'
+    pluginImplementation 'com.karasu256:karasuconfiglib:0.1.0.8'
 }
 
 def targetJavaVersion = 21

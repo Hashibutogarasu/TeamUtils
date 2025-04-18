@@ -701,6 +701,10 @@ public class TeamUtility {
         return team1 != null && team1.equals(team2);
     }
 
+    public static boolean isSpectator(Player player){
+        return spectatorTeam.getPlayers().contains(player);
+    }
+
     public static String getTeamInfo(String teamName) {
         Team team = getScoreboard().getTeam(teamName);
         if (team == null)
