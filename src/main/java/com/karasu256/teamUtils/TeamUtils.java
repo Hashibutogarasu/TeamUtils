@@ -41,7 +41,7 @@ public final class TeamUtils extends AbstractJavaPluginConfigable<AbstractPlugin
 
         @Override
         public Map<EquipmentEnum, EquipmentData> read(JsonReader in) throws IOException {
-           return BaseConfig.getGson().fromJson(in, Map.class);
+            return BaseConfig.getGson().fromJson(in, Map.class);
         }
     };
     public static Equipments EQUIPMENT_DATA = new Equipments();
@@ -105,5 +105,10 @@ public final class TeamUtils extends AbstractJavaPluginConfigable<AbstractPlugin
 
     public static TeamUtils getPlugin() {
         return (TeamUtils) JavaPlugin.getProvidingPlugin(TeamUtils.class);
+    }
+
+    @Override
+    public String getPluginName() {
+        return PLUGIN_NAME;
     }
 }

@@ -1,13 +1,12 @@
 package com.karasu256.teamUtils.config;
 
 import com.karasu256.karasuConfigLib.annotation.Config;
-import com.karasu256.teamUtils.TeamUtils;
 import org.bukkit.GameMode;
 
 /**
  * ゲームに関する設定を保存するクラスです。
  */
-@Config(fileName = "game_config.json", pluginName = TeamUtils.PLUGIN_NAME)
+@Config(fileName = "game_config.json")
 public class GameConfig extends AbstractPluginBaseConfig{
     /**
      * 現在のゲームモード

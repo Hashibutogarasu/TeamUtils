@@ -1,7 +1,5 @@
 package com.karasu256.teamUtils.config;
 
-import com.karasu256.karasuConfigLib.annotation.Config;
-import com.karasu256.teamUtils.TeamUtils;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemStack;
 
