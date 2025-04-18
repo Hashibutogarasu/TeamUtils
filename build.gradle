@@ -161,7 +161,7 @@ publishing {
     publications {
         mavenJava(MavenPublication) {
             from components.java
-            artifactId = 'teamutils'
+            artifactId = 'karasu-team-utils'
             
             version = project.version.toString()
             
