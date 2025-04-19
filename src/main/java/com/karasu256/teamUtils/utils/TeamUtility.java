@@ -107,7 +107,7 @@ public class TeamUtility {
             });
         });
 
-        LOGGER.info("プレイヤーチームキャッシュを更新しました: " + playerTeamCache.size() + "エントリ");
+        LOGGER.info("Updated team cache: " + playerTeamCache.size() + "entries");
     }
 
     /**

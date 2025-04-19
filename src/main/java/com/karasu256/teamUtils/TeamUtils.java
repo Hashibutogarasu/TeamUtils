@@ -26,7 +26,7 @@ import java.util.Map;
 import java.util.logging.Logger;
 
 public final class TeamUtils extends AbstractJavaPluginConfigable<AbstractPluginBaseConfig> {
-    public static Logger LOGGER = Logger.getLogger(TeamUtils.class.getName());
+    public static Logger LOGGER = Logger.getLogger("TeamUtils");
     public static final String PLUGIN_NAME = "TeamUtils";
     private static final TypeAdapter<Map<EquipmentEnum, EquipmentData>> EQUIPMENT_MAP_TYPE = new TypeAdapter<>() {
         @Override
