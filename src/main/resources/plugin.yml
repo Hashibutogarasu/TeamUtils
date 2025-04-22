@@ -1,5 +1,5 @@
 name: TeamUtils
-version: '0.0.1.9'
+version: '0.0.1.11'
 main: com.karasu256.teamUtils.TeamUtils
 api-version: '1.21'
 authors: [ Hashibutogarasu ]

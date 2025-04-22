@@ -22,6 +22,8 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import javax.annotation.Nullable;
+
 public class TeamUtility {
     private static final Logger LOGGER = TeamUtils.LOGGER;
     private static List<Team> teams;
@@ -48,6 +50,7 @@ public class TeamUtility {
         return Bukkit.getScoreboardManager().getMainScoreboard();
     }
 
+    @Nullable
     private static Objective getObjective(String name) {
         return getScoreboard().getObjective(name);
     }
@@ -78,7 +81,11 @@ public class TeamUtility {
             spectatorTeam.color(NamedTextColor.GRAY);
         }
 
-        // プレイヤーチームキャッシュを更新
+        teams.forEach(team -> {
+            team.color(ColorUtils.getRandomNamedTextColor());
+            updateTeamDisplayName(team);
+        });
+
         updatePlayerTeamCache();
     }
 
@@ -166,7 +173,12 @@ public class TeamUtility {
             team.displayName(Component.text(leaders.getFirst().getName()));
         } else {
             // リーダーがいない場合は、チームの色に基づいた名前を設定
-            team.displayName(Component.text(team.color().examinableName()));
+            var color = team.color();
+            if (color != null) {
+                team.displayName(Component.text(team.color().examinableName()));
+            } else {
+                LOGGER.info("A team color was null. While setting team display name.");
+            }
         }
         try {
             ChatColor teamColor = textColorToChatColor(team.color());
@@ -221,6 +233,11 @@ public class TeamUtility {
 
     public static void updateTeamSize() {
         var objective = getObjective(TEAM_SIZE_OBJECTIVE);
+
+        if (objective == null) {
+            LOGGER.info("Failed to update team size. Because the objective is null.");
+            return;
+        }
 
         // 各チームのサイズを計算して設定
         teams.forEach(team -> {
@@ -538,21 +555,19 @@ public class TeamUtility {
         for (Team team : new ArrayList<>(scoreboard.getTeams())) {
             if (!team.equals(spectatorTeam)) {
                 team.unregister();
-                try{
+                try {
                     teams.remove(team);
-                }
-                catch (Exception ignored) {
+                } catch (Exception ignored) {
 
                 }
             }
         }
 
-        try{
-            if(teams != null){
+        try {
+            if (teams != null) {
                 teams.clear();
             }
-        }
-        catch (Exception e){
+        } catch (Exception e) {
             teams = new ArrayList<>();
         }
 
@@ -571,7 +586,8 @@ public class TeamUtility {
         }
 
         int playerCount = players.size();
-        int requiredTeams = (maxMember == 1) ? playerCount : Math.max(1, (int) Math.ceil((double) playerCount / maxMember));
+        int requiredTeams = (maxMember == 1) ? playerCount
+                : Math.max(1, (int) Math.ceil((double) playerCount / maxMember));
 
         // プレイヤーをチームごとに分割
         int basePlayersPerTeam = (maxMember == 1) ? 1 : playerCount / requiredTeams;
@@ -587,7 +603,8 @@ public class TeamUtility {
                 currentIndex++;
             }
 
-            if (teamPlayers.isEmpty()) continue;
+            if (teamPlayers.isEmpty())
+                continue;
 
             // チーム名の決定（ランダムなプレイヤー名を小文字化）
             Player representative = teamPlayers.get(new Random().nextInt(teamPlayers.size()));
@@ -611,7 +628,14 @@ public class TeamUtility {
                 newTeam.getEntries().forEach(entry -> {
                     Player player = Bukkit.getPlayer(entry);
                     if (player != null && player.isOnline()) {
-                        getObjective(LEADER_OBJECTIVE).getScore(player.getName()).setScore(0);
+                        var objective = getObjective(LEADER_OBJECTIVE);
+
+                        if (objective == null) {
+                            LOGGER.info("Failed to update team size while newTeam.getEntries().. Because the objective is null.");
+                            return;
+                        }
+
+                        objective.getScore(player.getName()).setScore(0);
                     }
                 });
             }
@@ -701,11 +725,11 @@ public class TeamUtility {
         return team1 != null && team1.equals(team2);
     }
 
-    public static boolean isSpectator(Player player){
-        return spectatorTeam.getPlayers().contains(player);
+    public static boolean isSpectator(Player player) {
+        return spectatorTeam.hasEntry(player.getName());
     }
 
-    public static Team getSpectatorTeam(){
+    public static Team getSpectatorTeam() {
         return spectatorTeam;
     }
 
@@ -1144,8 +1168,14 @@ public class TeamUtility {
         return team;
     }
 
+    /**
+     * プレイヤーが何かしらのチームに所属しているかをチェックします
+     * 
+     * @param player チェック対象のプレイヤー
+     * @return プレイヤーが何かしらのチームに所属しているか
+     */
     public static boolean isPlayerInAnyTeam(Player player) {
-        return !playerTeamCache.containsKey(player.getUniqueId());
+        return playerTeamCache.containsKey(player.getUniqueId());
     }
 
     /**
