@@ -14,7 +14,7 @@ project.ext.versionProps = new Properties()
 def fetchLatestGitVersion() {
     def latestVersion = [0, 0, 1]
     try {
-        def process = "git ls-remote --tags https://github.com/Hashibutogarasu/TeamUtils.git".execute()
+        def process = "git ls-remote --tags https://github.com/Karasu-Lab/KarasuTeamUtils.git".execute()
         def tags = process.text.readLines()
             .collect { it.split()[1].replaceAll("refs/tags/v", "") }
             .findAll { it =~ /^\d+\.\d+\.\d+$/ }
@@ -98,7 +98,7 @@ repositories {
     }
     maven {
         name = "GitHubPackages"
-        url = "https://maven.pkg.github.com/Hashibutogarasu/KCommandAPI"
+        url = "https://maven.pkg.github.com/Karasu-Lab/KarasuCommandAPI"
         credentials {
             username = findProperty('gpr.user') ?: System.getenv("GITHUB_ACTOR")
             password = findProperty('gpr.key') ?: System.getenv("GITHUB_TOKEN")
@@ -106,7 +106,7 @@ repositories {
     }
     maven {
         name = "GitHubPackages"
-        url = "https://maven.pkg.github.com/Hashibutogarasu/KarasuConfigLib"
+        url = "https://maven.pkg.github.com/Karasu-Lab/KarasuConfigLib"
         credentials {
             username = findProperty('gpr.user') ?: System.getenv("GITHUB_ACTOR")
             password = findProperty('gpr.key') ?: System.getenv("GITHUB_TOKEN")
@@ -122,8 +122,8 @@ dependencies {
     compileOnly("io.papermc.paper:paper-api:1.21.3-R0.1-SNAPSHOT")
     implementation 'org.yaml:snakeyaml:2.0'
     implementation 'com.google.code.gson:gson:2.10.1'
-    implementation 'com.karasu256:kcommandapi:0.0.1.60'
-    pluginImplementation 'com.karasu256:kcommandapi:0.0.1.60'
+    implementation 'com.karasu256:karasu-command-api:0.0.1.60'
+    pluginImplementation 'com.karasu256:karasu-command-api:0.0.1.60'
     implementation 'com.karasu256:karasuconfiglib:0.1.0.8'
     pluginImplementation 'com.karasu256:karasuconfiglib:0.1.0.8'
 }
@@ -166,9 +166,9 @@ publishing {
             version = project.version.toString()
             
             pom {
-                name = 'TeamUtils'
+                name = 'KarasuTeamUtils'
                 description = 'A Minecraft plugin that provides team management utilities'
-                url = 'https://github.com/Hashibutogarasu/TeamUtils'
+                url = 'https://github.com/Karasu-Lab/KarasuTeamUtils'
                 
                 licenses {
                     license {
@@ -182,14 +182,14 @@ publishing {
                         id = 'hashibutogarasu'
                         name = 'Hashibutogarasu'
                         email = 'karasu@karasu256.com'
-                        url = 'https://github.com/Hashibutogarasu'
+                        url = 'https://github.com/Karasu-Lab'
                     }
                 }
                 
                 scm {
-                    connection = 'scm:git:git://github.com/Hashibutogarasu/TeamUtils.git'
-                    developerConnection = 'scm:git:ssh://github.com/Hashibutogarasu/TeamUtils.git'
-                    url = 'https://github.com/Hashibutogarasu/TeamUtils'
+                    connection = 'scm:git:git://github.com/Karasu-Lab/KarasuTeamUtils.git'
+                    developerConnection = 'scm:git:ssh://github.com/Karasu-Lab/KarasuTeamUtils.git'
+                    url = 'https://github.com/Karasu-Lab/KarasuTeamUtils'
                 }
             }
         }
@@ -202,7 +202,7 @@ publishing {
         
         maven {
             name = "GitHubPackages"
-            url = uri("https://maven.pkg.github.com/Hashibutogarasu/TeamUtils")
+            url = uri("https://maven.pkg.github.com/Karasu-Lab/KarasuTeamUtils")
             credentials {
                 username = project.findProperty("gpr.user") ?: System.getenv("GITHUB_ACTOR")
                 password = project.findProperty("gpr.key") ?: System.getenv("GITHUB_TOKEN")
