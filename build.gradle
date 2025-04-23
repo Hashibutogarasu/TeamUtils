@@ -122,10 +122,10 @@ dependencies {
     compileOnly("io.papermc.paper:paper-api:1.21.3-R0.1-SNAPSHOT")
     implementation 'org.yaml:snakeyaml:2.0'
     implementation 'com.google.code.gson:gson:2.10.1'
-    implementation 'com.karasu256:karasu-command-api:0.0.1.60'
-    pluginImplementation 'com.karasu256:karasu-command-api:0.0.1.60'
-    implementation 'com.karasu256:karasuconfiglib:0.1.0.8'
-    pluginImplementation 'com.karasu256:karasuconfiglib:0.1.0.8'
+    implementation 'com.karasu256:karasu-command-api:0.0.1.61'
+    pluginImplementation 'com.karasu256:karasu-command-api:0.0.1.61'
+    implementation 'com.karasu256:karasu-config-lib:0.1.0.9'
+    pluginImplementation 'com.karasu256:karasu-config-lib:0.1.0.9'
 }
 
 def targetJavaVersion = 21
