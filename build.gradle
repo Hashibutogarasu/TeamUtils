@@ -41,19 +41,16 @@ def buildNumber = buildProps.getProperty('buildNumber').toInteger()
 // バージョン形式
 version = "${majorVersion}.${minorVersion}.${patchVersion}.${buildNumber}"
 
-def mcVersion = "1.21.3"
+// mcVersionはルートプロジェクトから取得
+def mcVersion = rootProject.ext.minecraftVersion
 
 configurations {
     pluginImplementation
 }
 
+// リポジトリ設定（ルートプロジェクトに既に定義されている共通リポジトリは省略）
 repositories {
-    mavenCentral()
-    mavenLocal()
-    maven {
-        name = "papermc-repo"
-        url = "https://repo.papermc.io/repository/maven-public/"
-    }
+    // 特定のプロジェクト固有のリポジトリのみ追加
     maven {
         name = "GitHubPackages"
         url = "https://maven.pkg.github.com/Karasu-Lab/KarasuCommandAPI"
@@ -70,14 +67,10 @@ repositories {
             password = findProperty('gpr.key') ?: System.getenv("GITHUB_TOKEN")
         }
     }
-    maven {
-        name = "sonatype"
-        url = "https://oss.sonatype.org/content/groups/public/"
-    }
 }
 
 dependencies {
-    compileOnly("io.papermc.paper:paper-api:1.21.3-R0.1-SNAPSHOT")
+    compileOnly("io.papermc.paper:paper-api:${rootProject.ext.minecraftVersion}-R0.1-SNAPSHOT")
     implementation 'org.yaml:snakeyaml:2.0'
     implementation 'com.google.code.gson:gson:2.10.1'
     implementation 'com.karasu256:karasu-command-api:0.0.1.61'
@@ -86,34 +79,14 @@ dependencies {
     pluginImplementation 'com.karasu256:karasu-config-lib:0.1.0.9'
 }
 
-def targetJavaVersion = 21
+// JavaバージョンはサブプロジェクトのJava関連の共通設定でカバーされているので削除
 java {
-    def javaVersion = JavaVersion.toVersion(targetJavaVersion)
-    sourceCompatibility = javaVersion
-    targetCompatibility = javaVersion
-    if (JavaVersion.current() < javaVersion) {
-        toolchain.languageVersion = JavaLanguageVersion.of(targetJavaVersion)
-    }
     withJavadocJar()
     withSourcesJar()
 }
 
-tasks.withType(JavaCompile).configureEach {
-    options.encoding = 'UTF-8'
-
-    if (targetJavaVersion >= 10 || JavaVersion.current().isJava10Compatible()) {
-        options.release.set(targetJavaVersion)
-    }
-}
-
-processResources {
-    def props = [version: version]
-    inputs.properties props
-    filteringCharset 'UTF-8'
-    filesMatching('plugin.yml') {
-        expand props
-    }
-}
+// ルートプロジェクトの共通設定で既に定義済みなので削除
+// processResources { ... }
 
 publishing {
     publications {
@@ -169,32 +142,5 @@ publishing {
     }
 }
 
-tasks.withType(PublishToMavenRepository) {
-    mustRunAfter tasks.withType(Sign)
-}
-
 // ルートプロジェクトの共通タスクを適用
 rootProject.ext.createCommonTasks(project)
-
-tasks {
-    runServer {
-        minecraftVersion(mcVersion)
-        dependsOn('copyDependPlugin')
-    }
-}
-
-// ビルドタスク設定
-tasks.named('build') {
-    dependsOn 'sourcesJar', 'javadocJar', 'syncVersionWithGit'
-    finalizedBy 'incrementBuildNumber'
-}
-
-// processResources タスク設定
-tasks.named('processResources') {
-    dependsOn 'updatePluginVersion'
-}
-
-// plugin.yml更新タスク設定
-tasks.named('updatePluginVersion') {
-    dependsOn 'syncVersionWithGit'
-}
