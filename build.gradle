@@ -11,10 +11,10 @@ dependencies {
     compileOnly("io.papermc.paper:paper-api:${rootProject.ext.minecraftVersion}-R0.1-SNAPSHOT")
     implementation 'org.yaml:snakeyaml:2.0'
     implementation 'com.google.code.gson:gson:2.10.1'
-    implementation 'com.karasu256:karasu-command-api:0.0.1.61'
-    pluginImplementation 'com.karasu256:karasu-command-api:0.0.1.61'
-    implementation 'com.karasu256:karasu-config-lib:0.1.0.9'
-    pluginImplementation 'com.karasu256:karasu-config-lib:0.1.0.9'
+    implementation 'com.karasu256:karasu-command-api:0.0.1.64'
+    pluginImplementation 'com.karasu256:karasu-command-api:0.0.1.64'
+    implementation 'com.karasu256:karasu-config-lib:0.1.0.13'
+    pluginImplementation 'com.karasu256:karasu-config-lib:0.1.0.13'
 }
 
 publishing {
