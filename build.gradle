@@ -220,20 +220,3 @@ tasks.named('processResources') {
 tasks.named('updatePluginVersion') {
     dependsOn 'syncVersionWithGit'
 }
-
-tasks.register('copyDependPlugin', Copy) {
-    doFirst {
-        fileTree('run/plugins').matching {
-            configurations.pluginImplementation.dependencies.each { dependency ->
-                include "**/${dependency.name}-*.jar"
-            }
-        }.each { file ->
-            logger.lifecycle("Removing existing plugin: ${file.name}")
-            file.delete()
-        }
-    }
-
-    dependsOn createPluginsDir
-    from(configurations.pluginImplementation)
-    into('run/plugins')
-}
