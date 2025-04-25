@@ -13,8 +13,8 @@ dependencies {
     implementation 'com.google.code.gson:gson:2.10.1'
     implementation 'com.karasu256:karasu-command-api:0.0.1.64'
     pluginImplementation 'com.karasu256:karasu-command-api:0.0.1.64'
-    implementation 'com.karasu256:karasu-config-lib:0.1.0.13'
-    pluginImplementation 'com.karasu256:karasu-config-lib:0.1.0.13'
+    implementation 'com.karasu256:karasu-config-lib:0.0.1.13'
+    pluginImplementation 'com.karasu256:karasu-config-lib:0.0.1.13'
 }
 
 publishing {
