@@ -11,35 +11,7 @@ def versionFile = file('version.properties')
 // versionPropsをプロジェクト拡張プロパティとして定義
 project.ext.versionProps = new Properties()
 
-// gitブランチ名を取得するための関数
-def getGitBranch() {
-    try {
-        def process = "git rev-parse --abbrev-ref HEAD".execute()
-        process.waitFor()
-        if (process.exitValue() == 0) {
-            return process.text.trim()
-        } else {
-            return "unknown"
-        }
-    } catch (Exception e) {
-        return "unknown"
-    }
-}
-
-// gitコミットハッシュを取得するための関数
-def getGitCommitHash() {
-    try {
-        def process = "git rev-parse --short HEAD".execute()
-        process.waitFor()
-        if (process.exitValue() == 0) {
-            return process.text.trim()
-        } else {
-            return "unknown"
-        }
-    } catch (Exception e) {
-        return "unknown"
-    }
-}
+// gitブランチ名とコミットハッシュの取得はルートプロジェクトの同名メソッドを使用
 
 def fetchLatestGitVersion() {
     def latestVersion = [0, 0, 1]
@@ -271,64 +243,9 @@ tasks.withType(PublishToMavenRepository) {
 
 tasks {
     runServer {
-        // Configure the Minecraft version for our task.
-        // This is the only required configuration besides applying the plugin.
-        // Your plugin's jar (or shadowJar if present) will be used automatically.
         minecraftVersion(mcVersion)
         dependsOn('copyDependPlugin')
     }
-}
-
-tasks.register('incrementBuildNumber') {
-    group = 'build'
-    description = 'Increment build number after successful build'
-    
-    doLast {
-        def currentBuildNumber = buildProps.getProperty('buildNumber').toInteger()
-        buildProps.setProperty('buildNumber', (currentBuildNumber + 1).toString())
-        buildNumberFile.withOutputStream { buildProps.store(it, null) }
-        println "Build number incremented to: ${currentBuildNumber + 1}"
-    }
-}
-
-tasks.register('updatePluginVersion') {
-    group = 'build'
-    description = 'Update plugin.yml version from project version'
-    
-    doLast {
-        def pluginYml = file('src/main/resources/plugin.yml')
-        def lines = pluginYml.readLines()
-        def updatedLines = lines.collect { line ->
-            if (line.trim().startsWith('version:')) {
-                return "version: '${project.version}'"
-            }
-            return line
-        }
-        pluginYml.text = updatedLines.join('\n')
-    }
-}
-
-tasks.register('createPluginsDir') {
-    doLast {
-        mkdir 'run/plugins'
-    }
-}
-
-tasks.register('copyDependPlugin', Copy) {
-    doFirst {
-        fileTree('run/plugins').matching {
-            configurations.pluginImplementation.dependencies.each { dependency ->
-                include "**/${dependency.name}-*.jar"
-            }
-        }.each { file ->
-            logger.lifecycle("Removing existing plugin: ${file.name}")
-            file.delete()
-        }
-    }
-
-    dependsOn createPluginsDir
-    from(configurations.pluginImplementation)
-    into('run/plugins')
 }
 
 tasks.register('syncVersionWithGit') {
@@ -347,142 +264,19 @@ tasks.register('syncVersionWithGit') {
     }
 }
 
-tasks.named('processResources') {
-    dependsOn 'updatePluginVersion'
-}
-
-// サイレントビルドタスク（ビルド番号を上げない）を追加
-tasks.register('silentBuild') {
-    group = 'build'
-    description = 'ビルド番号を上げずにビルドを行う'
-    
-    // タスクの依存関係として明示的にupdatePluginVersionを追加
-    dependsOn 'compileJava', 'processResources', 'classes', 'sourcesJar', 'javadocJar', 'updatePluginVersion'
-    
-    doLast {
-        println "サイレントビルドを実行中..."
-        println "現在のバージョン: ${project.version} (ビルド番号は変更されません)"
-    }
-    
-    finalizedBy 'silentJar', 'verifyJarOutput'
-}
-
-// サイレントビルド用のJarタスク
-tasks.register('silentJar', Jar) {
-    group = 'build'
-    description = 'ビルド番号を上げずにJARファイルを作成する'
-    
-    dependsOn 'updatePluginVersion'
-    
+tasks.register('copyDependPlugin', Copy) {
     doFirst {
-        def gitBranch = getGitBranch()
-        def gitCommit = getGitCommitHash()
-        archiveFileName = "${project.name}-${majorVersion}.${minorVersion}.${patchVersion}.${buildNumber}-${mcVersion}-${gitBranch}-${gitCommit}-silent.jar"
-    }
-    
-    archiveBaseName.set(project.name)
-    from sourceSets.main.output
-    dependsOn configurations.compileClasspath
-    
-    // 確実に出力されるように設定
-    destinationDirectory = file("${buildDir}/libs")
-    duplicatesStrategy = DuplicatesStrategy.INCLUDE
-}
-
-// サイレントJARをプラグインディレクトリにコピーするタスク
-tasks.register('copySilentJar', Copy) {
-    group = 'build'
-    description = 'サイレントビルドしたJARファイルをプラグインディレクトリにコピーする'
-    
-    dependsOn 'silentJar', 'createPluginsDir'
-    
-    doFirst {
-        fileTree(dir: 'run/plugins').matching {
-            include "**/${project.name}-*.jar"
+        fileTree('run/plugins').matching {
+            configurations.pluginImplementation.dependencies.each { dependency ->
+                include "**/${dependency.name}-*.jar"
+            }
         }.each { file ->
-            logger.lifecycle("古いJARを削除: ${file.name}")
+            logger.lifecycle("Removing existing plugin: ${file.name}")
             file.delete()
         }
     }
-    
-    from silentJar
-    into 'run/plugins'
-    
-    doLast {
-        println "サイレントビルドのJARを 'run/plugins' ディレクトリにコピーしました"
-    }
-}
 
-// jarファイルの出力確認用タスクを追加
-tasks.register('verifyJarOutput') {
-    group = 'verification'
-    description = 'JARファイルが正しく生成されたことを確認する'
-    
-    doLast {
-        def libsDir = file("${buildDir}/libs")
-        def jarFiles = libsDir.listFiles()?.findAll { it.name.endsWith('.jar') } ?: []
-        
-        if (jarFiles.isEmpty()) {
-            throw new GradleException("JARファイルが生成されませんでした。ビルドに失敗しています。")
-        } else {
-            println "生成されたJARファイル:"
-            jarFiles.each { println " - ${it.name} (${it.length()} bytes)" }
-        }
-    }
-}
-
-tasks.named('build') {
-    dependsOn 'sourcesJar', 'javadocJar', 'syncVersionWithGit'
-    finalizedBy 'incrementBuildNumber', 'verifyJarOutput'
-}
-
-tasks.named('build').configure {
-    finalizedBy 'verifyJarOutput'
-}
-
-// サイレントビルドとrunServerの連携を設定
-tasks.named('runServer').configure {
-    dependsOn 'silentBuild', 'copySilentJar'
-}
-
-// processResourcesタスクの設定を明示的に行う
-tasks.named('processResources') {
-    mustRunAfter 'updatePluginVersion'
-}
-
-tasks.named('updatePluginVersion') {
-    mustRunAfter 'incrementBuildNumber'
-}
-
-// サイレントビルド実行後の検証タスクを追加
-tasks.register('decrementBuildNumber') {
-    group = 'build'
-    description = 'ビルドが失敗または中断されたときにビルド番号を戻す'
-    
-    doLast {
-        def currentBuildNumber = buildProps.getProperty('buildNumber').toInteger()
-        if (currentBuildNumber > 1) {
-            def newBuildNumber = currentBuildNumber - 1
-            buildProps.setProperty('buildNumber', newBuildNumber.toString())
-            buildNumberFile.withOutputStream { buildProps.store(it, null) }
-            println "ビルド番号を ${newBuildNumber} に戻しました（ビルド失敗または中断）"
-        } else {
-            println "ビルド番号は最小値の1のままです"
-        }
-    }
-}
-
-// タスク失敗時のビルド番号デクリメント処理
-gradle.taskGraph.afterTask { task, TaskState state ->
-    if (task.name == 'incrementBuildNumber' && (state.failure || state.skipped)) {
-        tasks.decrementBuildNumber.execute()
-    }
-}
-
-gradle.buildFinished { result ->
-    if (!result.failure && gradle.startParameter.taskNames.contains('build')) {
-        if (result.action == 'cancelled' || result.action == 'interrupted') {
-            tasks.decrementBuildNumber.execute()
-        }
-    }
+    dependsOn createPluginsDir
+    from(configurations.pluginImplementation)
+    into('run/plugins')
 }
