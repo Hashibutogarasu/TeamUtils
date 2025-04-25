@@ -19,6 +19,7 @@ import java.util.logging.Logger;
  * プレイヤーのゲームモード変更を監視するリスナークラス
  */
 public class GameModeChangeListener implements Listener {
+    @SuppressWarnings("unused")
     private static final Logger LOGGER = TeamUtils.LOGGER;
 
     /**

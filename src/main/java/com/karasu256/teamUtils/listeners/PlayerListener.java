@@ -13,6 +13,7 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import java.util.logging.Logger;
 
 public class PlayerListener implements Listener {
+    @SuppressWarnings("unused")
     private static final Logger LOGGER = TeamUtils.LOGGER;
 
     @EventHandler

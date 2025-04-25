@@ -27,6 +27,7 @@ public class ChatMenuBuilder {
         return rowBuilder;
     }
 
+    @SuppressWarnings("deprecation")
     public void send(Player player) {
         player.sendMessage("===========");
         player.spigot().sendMessage(new TextComponent(title));
@@ -46,6 +47,7 @@ public class ChatMenuBuilder {
             return this;
         }
 
+        @SuppressWarnings("deprecation")
         public RowBuilder addClickableText(String text, String command, String hoverText) {
             TextComponent component = new TextComponent(text);
 

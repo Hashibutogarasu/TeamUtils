@@ -7,68 +7,6 @@ plugins {
 
 group = 'com.karasu256'
 
-def versionFile = file('version.properties')
-def versionProps = new Properties()
-
-// バージョンプロパティとビルド番号の初期化
-if (versionFile.exists()) {
-    versionFile.withInputStream { versionProps.load(it) }
-} else {
-    // 初期バージョンを設定
-    versionProps.setProperty('major', '0')
-    versionProps.setProperty('minor', '0')
-    versionProps.setProperty('patch', '1')
-    versionFile.createNewFile()
-    versionFile.withOutputStream { versionProps.store(it, "Version properties for ${project.name}") }
-}
-
-def buildNumberFile = file('build-number.properties')
-def buildProps = new Properties()
-
-if (buildNumberFile.exists()) {
-    buildNumberFile.withInputStream { buildProps.load(it) }
-} else {
-    buildProps.setProperty('buildNumber', '0')
-    buildNumberFile.createNewFile()
-    buildNumberFile.withOutputStream { buildProps.store(it, "Build Number for ${project.name}") }
-}
-
-def majorVersion = versionProps.getProperty('major').toInteger()
-def minorVersion = versionProps.getProperty('minor').toInteger()
-def patchVersion = versionProps.getProperty('patch').toInteger()
-def buildNumber = buildProps.getProperty('buildNumber').toInteger()
-
-// バージョン形式
-version = "${majorVersion}.${minorVersion}.${patchVersion}.${buildNumber}"
-
-// mcVersionはルートプロジェクトから取得
-def mcVersion = rootProject.ext.minecraftVersion
-
-configurations {
-    pluginImplementation
-}
-
-// リポジトリ設定（ルートプロジェクトに既に定義されている共通リポジトリは省略）
-repositories {
-    // 特定のプロジェクト固有のリポジトリのみ追加
-    maven {
-        name = "GitHubPackages"
-        url = "https://maven.pkg.github.com/Karasu-Lab/KarasuCommandAPI"
-        credentials {
-            username = findProperty('gpr.user') ?: System.getenv("GITHUB_ACTOR")
-            password = findProperty('gpr.key') ?: System.getenv("GITHUB_TOKEN")
-        }
-    }
-    maven {
-        name = "GitHubPackages"
-        url = "https://maven.pkg.github.com/Karasu-Lab/KarasuConfigLib"
-        credentials {
-            username = findProperty('gpr.user') ?: System.getenv("GITHUB_ACTOR")
-            password = findProperty('gpr.key') ?: System.getenv("GITHUB_TOKEN")
-        }
-    }
-}
-
 dependencies {
     compileOnly("io.papermc.paper:paper-api:${rootProject.ext.minecraftVersion}-R0.1-SNAPSHOT")
     implementation 'org.yaml:snakeyaml:2.0'
@@ -78,15 +16,6 @@ dependencies {
     implementation 'com.karasu256:karasu-config-lib:0.1.0.9'
     pluginImplementation 'com.karasu256:karasu-config-lib:0.1.0.9'
 }
-
-// JavaバージョンはサブプロジェクトのJava関連の共通設定でカバーされているので削除
-java {
-    withJavadocJar()
-    withSourcesJar()
-}
-
-// ルートプロジェクトの共通設定で既に定義済みなので削除
-// processResources { ... }
 
 publishing {
     publications {
@@ -142,5 +71,4 @@ publishing {
     }
 }
 
-// ルートプロジェクトの共通タスクを適用
 rootProject.ext.createCommonTasks(project)

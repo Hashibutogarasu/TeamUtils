@@ -2,7 +2,6 @@ package com.karasu256.teamUtils.command.subcommand;
 
 import com.karasu256.kcapi.api.command.AbstractEndOfSubCommand;
 import com.karasu256.kcapi.api.command.ICommand;
-import com.karasu256.kcapi.api.command.ISubCommand;
 import com.karasu256.teamUtils.utils.TeamUtility;
 import org.bukkit.command.CommandSender;
 import org.bukkit.scoreboard.Team;

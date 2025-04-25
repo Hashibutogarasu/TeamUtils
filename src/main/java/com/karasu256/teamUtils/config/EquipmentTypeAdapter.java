@@ -60,6 +60,7 @@ public class EquipmentTypeAdapter implements JsonSerializer<Map<EquipmentEnum, E
                     if (equipObj.has("enchantments")) {
                         JsonObject enchants = equipObj.getAsJsonObject("enchantments");
                         for (Map.Entry<String, JsonElement> enchant : enchants.entrySet()) {
+                            @SuppressWarnings("deprecation")
                             Enchantment enchantment = Enchantment.getByKey(org.bukkit.NamespacedKey.minecraft(enchant.getKey()));
                             if (enchantment != null) {
                                 item.addUnsafeEnchantment(enchantment, enchant.getValue().getAsInt());

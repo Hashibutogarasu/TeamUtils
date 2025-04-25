@@ -2,7 +2,6 @@ package com.karasu256.teamUtils.command.subcommand;
 
 import com.karasu256.kcapi.api.command.AbstractEndOfSubCommand;
 import com.karasu256.kcapi.api.command.ICommand;
-import com.karasu256.kcapi.api.command.ISubCommand;
 import com.karasu256.teamUtils.utils.TeamUtility;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
@@ -18,6 +17,7 @@ public class TeamInfoSubCommand extends AbstractEndOfSubCommand {
         super("info", subCommand);
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public boolean execute(@NotNull CommandSender sender, @NotNull String commandLabel, @NotNull String[] args) {
         if(args.length < 1 || args.length > 2) {
