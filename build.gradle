@@ -8,80 +8,34 @@ plugins {
 group = 'com.karasu256'
 
 def versionFile = file('version.properties')
-// versionPropsをプロジェクト拡張プロパティとして定義
-project.ext.versionProps = new Properties()
+def versionProps = new Properties()
 
-// gitブランチ名とコミットハッシュの取得はルートプロジェクトの同名メソッドを使用
-
-def fetchLatestGitVersion() {
-    def latestVersion = [0, 0, 1]
-    try {
-        def process = "git ls-remote --tags https://github.com/Karasu-Lab/KarasuTeamUtils.git".execute()
-        def tags = process.text.readLines()
-            .collect { it.split()[1].replaceAll("refs/tags/v", "") }
-            .findAll { it =~ /^\d+\.\d+\.\d+$/ }
-        
-        if (tags) {
-            def latest = tags.last()
-            latestVersion = latest.tokenize('.').collect { it.toInteger() }
-            println "Found latest version tag: v${latest}"
-            
-            // プロジェクト拡張プロパティを使用
-            def currentVersion = [
-                project.versionProps.getProperty('major', '0').toInteger(),
-                project.versionProps.getProperty('minor', '0').toInteger(),
-                project.versionProps.getProperty('patch', '0').toInteger()
-            ]
-            
-            if (latestVersion != currentVersion) {
-                println "Version changed from ${currentVersion.join('.')} to ${latestVersion.join('.')}"
-                // ビルドナンバーをリセット
-                buildProps.setProperty('buildNumber', '0')
-                buildProps.store(buildNumberFile.newWriter(), null)
-            }
-        } else {
-            println "No version tags found. Using default version: ${latestVersion.join('.')}"
-        }
-    } catch (Exception e) {
-        println "Warning: Failed to fetch version from Git: ${e.message}"
-        println "Using default version: ${latestVersion.join('.')}"
-    }
-    return latestVersion
+// バージョンプロパティとビルド番号の初期化
+if (versionFile.exists()) {
+    versionFile.withInputStream { versionProps.load(it) }
+} else {
+    // 初期バージョンを設定
+    versionProps.setProperty('major', '0')
+    versionProps.setProperty('minor', '0')
+    versionProps.setProperty('patch', '1')
+    versionFile.createNewFile()
+    versionFile.withOutputStream { versionProps.store(it, "Version properties for ${project.name}") }
 }
 
-def initializeWithGitVersion() {
-    def gitVersion = fetchLatestGitVersion()
-    // プロジェクト拡張プロパティを使用
-    project.versionProps.setProperty('major', gitVersion[0].toString())
-    project.versionProps.setProperty('minor', gitVersion[1].toString())
-    project.versionProps.setProperty('patch', gitVersion[2].toString())
-    println "Initialized version from Git: ${gitVersion[0]}.${gitVersion[1]}.${gitVersion[2]}"
-    return gitVersion
-}
-
-// ビルドナンバーの関連変数を先に定義
 def buildNumberFile = file('build-number.properties')
 def buildProps = new Properties()
-
-if (versionFile.exists()) {
-    versionFile.withInputStream { project.versionProps.load(it) }
-} else {
-    def gitVersion = initializeWithGitVersion()
-    versionFile.createNewFile()
-    versionFile.withOutputStream { project.versionProps.store(it, "Version properties for ${project.name}") }
-}
 
 if (buildNumberFile.exists()) {
     buildNumberFile.withInputStream { buildProps.load(it) }
 } else {
     buildProps.setProperty('buildNumber', '0')
     buildNumberFile.createNewFile()
-    buildNumberFile.withOutputStream { buildProps.store(it, null) }
+    buildNumberFile.withOutputStream { buildProps.store(it, "Build Number for ${project.name}") }
 }
 
-def majorVersion = project.versionProps.getProperty('major').toInteger()
-def minorVersion = project.versionProps.getProperty('minor').toInteger()
-def patchVersion = project.versionProps.getProperty('patch').toInteger()
+def majorVersion = versionProps.getProperty('major').toInteger()
+def minorVersion = versionProps.getProperty('minor').toInteger()
+def patchVersion = versionProps.getProperty('patch').toInteger()
 def buildNumber = buildProps.getProperty('buildNumber').toInteger()
 
 // バージョン形式
@@ -241,6 +195,9 @@ tasks.withType(PublishToMavenRepository) {
     mustRunAfter tasks.withType(Sign)
 }
 
+// ルートプロジェクトの共通タスクを適用
+rootProject.ext.createCommonTasks(project)
+
 tasks {
     runServer {
         minecraftVersion(mcVersion)
@@ -248,20 +205,20 @@ tasks {
     }
 }
 
-tasks.register('syncVersionWithGit') {
-    group = 'build'
-    description = 'Synchronize version with GitHub release tags'
-    
-    doLast {
-        def gitVersion = fetchLatestGitVersion()
-        versionProps.setProperty('major', gitVersion[0].toString())
-        versionProps.setProperty('minor', gitVersion[1].toString())
-        versionProps.setProperty('patch', gitVersion[2].toString())
-        versionFile.withOutputStream { versionProps.store(it, "Version properties for ${project.name}") }
-        
-        project.version = "${gitVersion[0]}.${gitVersion[1]}.${gitVersion[2]}.${buildNumber}"
-        println "Version synchronized with Git: ${project.version}"
-    }
+// ビルドタスク設定
+tasks.named('build') {
+    dependsOn 'sourcesJar', 'javadocJar', 'syncVersionWithGit'
+    finalizedBy 'incrementBuildNumber'
+}
+
+// processResources タスク設定
+tasks.named('processResources') {
+    dependsOn 'updatePluginVersion'
+}
+
+// plugin.yml更新タスク設定
+tasks.named('updatePluginVersion') {
+    dependsOn 'syncVersionWithGit'
 }
 
 tasks.register('copyDependPlugin', Copy) {
